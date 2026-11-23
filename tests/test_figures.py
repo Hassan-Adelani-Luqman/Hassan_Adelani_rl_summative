@@ -138,3 +138,20 @@ def test_changed_factors_reads_the_sweep_definition():
     assert changed_factors("dqn", "baseline") == "baseline"
     assert changed_factors("a2c", "final_lr_7e-4_seed2") == "lr=0.0007"
     assert HELD_OUT_SEEDS  # seeds are importable for the fixture
+
+
+def test_compacted_logs_load_like_the_originals(tmp_path):
+    from analysis.compact_logs import compact_run
+    from analysis.load_runs import load_train, load_updates
+
+    rng = np.random.default_rng(1)
+    pd.DataFrame({"frames": [1000, 2000], "episode": [1, 2], "return": rng.normal(-1000, 100, 2),
+                  "decisions": [40, 41]}).to_csv(tmp_path / "train.csv", index=False)
+    pd.DataFrame({"frames": [1000], "loss": [0.123456789]}).to_csv(tmp_path / "updates.csv", index=False)
+    before = load_train(tmp_path)
+    assert compact_run(tmp_path) == 2
+    assert not (tmp_path / "train.csv").exists() and (tmp_path / "train.csv.gz").exists()
+    after = load_train(tmp_path)
+    assert list(after.columns) == list(before.columns) and (after["episode"] == before["episode"]).all()
+    np.testing.assert_allclose(after["return"], before["return"], rtol=1e-4)
+    assert load_updates(tmp_path)["loss"].iloc[0] == 0.12346

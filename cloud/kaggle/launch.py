@@ -185,6 +185,10 @@ def pull(shard: str) -> None:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(path, target)
                 merged += 1
+    if shard != "test":  # results kept in the repo are stored compactly (5 s.f., gzip)
+        from analysis.compact_logs import compact_all
+
+        compact_all(output_roots(shard)[0])
     summary = out / "kernel_summary.json"
     print(f"merged {merged} files from {shard}" + (f"; kernel summary: {summary.read_text()}" if summary.exists() else ""))
 

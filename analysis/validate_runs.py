@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from analysis.load_runs import load_runs
+from analysis.load_runs import load_runs, log_file
 from environment.custom_env import ENV_VERSION
 from training.common import ALGOS, ROOT
 from training.seeds import HELD_OUT_SEEDS, seed_hash
@@ -31,7 +31,8 @@ def validate(runs: pd.DataFrame, min_runs: int = 10) -> tuple[pd.DataFrame, list
     for algo in ALGOS:
         group = runs[(runs["algo"] == algo) & runs["run_id"].isin(sweep_ids[algo])] if not runs.empty else runs
         missing_files = [r.run_id for r in group.itertuples()
-                         if not all((Path(r.log_dir) / f).exists() for f in ("train.csv", "updates.csv", "eval.json"))]
+                         if not (log_file(r.log_dir, "train.csv").exists() and log_file(r.log_dir, "updates.csv").exists()
+                                 and (Path(r.log_dir) / "eval.json").exists())]
         budgets = sorted(group["cfg_total_frames"].dropna().unique().tolist()) if "cfg_total_frames" in group else []
         hashes = sorted(group["held_out_seed_hash"].dropna().unique().tolist()) if "held_out_seed_hash" in group else []
         versions = sorted(group["env_version"].dropna().unique().tolist()) if "env_version" in group else []

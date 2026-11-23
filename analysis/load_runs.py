@@ -60,14 +60,20 @@ def load_runs(logs_root: str | Path = ROOT / "logs", models_root: str | Path = R
     return pd.DataFrame([load_run(d, models_root) for d in find_runs(logs_root)])
 
 
+def log_file(log_dir: str | Path, name: str) -> Path:
+    """``name`` (e.g. train.csv) or its compacted ``name.gz`` form, whichever exists."""
+    plain = Path(log_dir) / name
+    return plain if plain.exists() else plain.with_name(name + ".gz")
+
+
 def load_train(log_dir: str | Path) -> pd.DataFrame:
     """Per-episode training log: frames, episode, return, decisions."""
-    return pd.read_csv(Path(log_dir) / "train.csv")
+    return pd.read_csv(log_file(log_dir, "train.csv"))
 
 
 def load_updates(log_dir: str | Path) -> pd.DataFrame:
     """Per-update training log: losses, entropy or epsilon, gradient norm."""
-    return pd.read_csv(Path(log_dir) / "updates.csv")
+    return pd.read_csv(log_file(log_dir, "updates.csv"))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
