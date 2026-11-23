@@ -14,8 +14,9 @@ import argparse
 import sys
 from collections.abc import Sequence
 
+from environment.custom_env import SCENARIOS
+
 ALGOS = ("best", "dqn", "reinforce", "a2c", "ppo")
-SCENARIOS = ("default", "heavy_rain", "shuffled_hotspots")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,7 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="episode seed (default: the first held-out evaluation seed)",
     )
-    parser.add_argument("--scenario", choices=SCENARIOS, default="default", help="district scenario")
+    parser.add_argument("--scenario", choices=sorted(SCENARIOS), default="default", help="district scenario")
     parser.add_argument("--episodes", type=int, default=1, help="number of episodes to play")
     parser.add_argument("--speed", type=float, default=1.0, help="viewer playback speed multiplier")
     parser.add_argument(
