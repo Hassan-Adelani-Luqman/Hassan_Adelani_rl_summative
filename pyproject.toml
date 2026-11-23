@@ -43,4 +43,6 @@ addopts = "-q"
 filterwarnings = [
     # raised by TorchRL's own built-in weight updaters at import time, not by this project
     "ignore:Creating .*WeightUpdater which inherits from WeightUpdaterBase is deprecated:DeprecationWarning",
+    # starlette's TestClient notice about httpx; harmless for these tests
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
 ]

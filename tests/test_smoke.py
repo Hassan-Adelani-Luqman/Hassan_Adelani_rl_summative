@@ -83,12 +83,25 @@ def test_main_lists_every_subcommand():
 @pytest.mark.parametrize(
     "argv",
     [
-        ["main.py"],
-        ["main.py", "play", "--seed", "3"],
-        ["main.py", "--seed", "3"],
+        ["main.py", "play", "--help"],
+        ["main.py", "--seed", "3", "--help"],
     ],
 )
 def test_main_routes_to_play(argv):
-    # Until the viewer exists, play exits with its own "not built yet" message; reaching it proves the routing.
+    # play's own parser answers, which proves main.py handed the arguments to play.py
     result = _run(*argv)
-    assert "play.py:" in result.stderr
+    assert result.returncode == 0, result.stderr
+    assert "usage: play.py" in result.stdout
+
+
+def test_main_with_no_arguments_starts_play():
+    import main
+
+    called = {}
+    original = main._run_play
+    main._run_play = lambda argv: called.setdefault("argv", list(argv)) or 0
+    try:
+        assert main.main([]) == 0
+    finally:
+        main._run_play = original
+    assert called["argv"] == []
