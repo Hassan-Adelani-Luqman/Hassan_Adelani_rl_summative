@@ -20,7 +20,7 @@ import pandas as pd
 from training.common import ROOT
 from training.seeds import EVAL_SETS
 
-BASELINE_EPISODES = ROOT / "assets" / "tables" / "baselines_v0_episodes.csv"
+BASELINE_EPISODES = ROOT / "assets" / "tables" / "baselines_episodes.csv"
 
 
 def paired_bootstrap(a: Sequence[float], b: Sequence[float], n_boot: int = 10_000, seed: int = 0) -> dict[str, float]:
