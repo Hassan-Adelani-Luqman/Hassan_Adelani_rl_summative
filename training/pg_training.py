@@ -194,7 +194,7 @@ def train(cfg: RunConfig) -> dict[str, Any]:
              "fps": round(frames / train_seconds, 1), "total_seconds": round(timer.elapsed(), 1)}
     modules = {"actor": actor, "critic": critic}
     save_run(cfg, modules, stats, evaluation)
-    return {"stats": stats, "eval": evaluation}
+    return {"stats": stats, "eval": evaluation, "actor": actor}
 
 
 def main(argv: Sequence[str] | None = None) -> int:

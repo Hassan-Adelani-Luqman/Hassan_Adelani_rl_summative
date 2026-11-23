@@ -22,6 +22,14 @@ COMMANDS: dict[str, str] = {
 }
 
 
+# commands handled by another module's own argument parser: command -> (module, function)
+DELEGATES: dict[str, tuple[str, str]] = {
+    "train": ("training.cli", "train_main"),
+    "sweep": ("training.run_sweep", "main"),
+    "evaluate": ("training.cli", "evaluate_main"),
+}
+
+
 def _run_play(argv: Sequence[str]) -> int:
     import play  # imported lazily so `main.py --help` stays fast
 
@@ -57,6 +65,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run_play(args_list[1:])
     if args_list[0].startswith("-") and args_list[0] not in ("-h", "--help"):
         return _run_play(args_list)
+    if args_list[0] in DELEGATES:
+        import importlib
+
+        module_name, function = DELEGATES[args_list[0]]
+        return getattr(importlib.import_module(module_name), function)(args_list[1:])
     args = build_parser().parse_args(args_list)
     return args.func(args)
 
