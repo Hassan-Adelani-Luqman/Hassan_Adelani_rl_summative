@@ -2,17 +2,35 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pandas as pd
 
 
-def to_markdown(df: pd.DataFrame, float_format: str = "{:.2f}") -> str:
-    """Render a DataFrame as a GitHub-flavoured Markdown table (no extra dependencies)."""
+def readable_float(value: float) -> str:
+    """Report-friendly numbers: no scientific notation for returns, '—' for missing values."""
+    if math.isnan(value):
+        return "—"
+    magnitude = abs(value)
+    if magnitude >= 1 and float(value).is_integer():
+        return str(int(value))
+    if magnitude >= 100:
+        return f"{value:.1f}"
+    if magnitude >= 1:
+        return f"{value:.2f}"
+    return "0" if value == 0 else f"{value:.3g}"
+
+
+def to_markdown(df: pd.DataFrame, float_format: str | None = None) -> str:
+    """Render a DataFrame as a GitHub-flavoured Markdown table (no extra dependencies).
+
+    ``float_format`` is a format string; by default numbers use ``readable_float``.
+    """
 
     def fmt(value: object) -> str:
         if isinstance(value, float):
-            return float_format.format(value)
+            return readable_float(value) if float_format is None else float_format.format(value)
         return str(value)
 
     header = "| " + " | ".join(map(str, df.columns)) + " |"
@@ -21,7 +39,7 @@ def to_markdown(df: pd.DataFrame, float_format: str = "{:.2f}") -> str:
     return "\n".join([header, rule, *rows]) + "\n"
 
 
-def write_table(df: pd.DataFrame, stem: str | Path, float_format: str = "{:.2f}") -> tuple[Path, Path]:
+def write_table(df: pd.DataFrame, stem: str | Path, float_format: str | None = None) -> tuple[Path, Path]:
     """Write ``<stem>.csv`` and ``<stem>.md``; returns both paths."""
     stem = Path(stem)
     stem.parent.mkdir(parents=True, exist_ok=True)
