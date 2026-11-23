@@ -28,6 +28,7 @@ DELEGATES: dict[str, tuple[str, str]] = {
     "sweep": ("training.run_sweep", "main"),
     "evaluate": ("training.cli", "evaluate_main"),
     "serve": ("api.app", "serve_main"),
+    "figures": ("analysis.make_figures", "main"),
 }
 
 
