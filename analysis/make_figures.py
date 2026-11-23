@@ -164,7 +164,8 @@ def band(curves: list[pd.Series], points: int = 200) -> tuple[np.ndarray, np.nda
 
 
 def thousands(ax, axis: str = "x") -> None:
-    fmt = matplotlib.ticker.FuncFormatter(lambda v, _: f"{v / 1e6:g}M" if abs(v) >= 1e6 else f"{v / 1e3:g}k")
+    fmt = matplotlib.ticker.FuncFormatter(
+        lambda v, _: "0" if v == 0 else f"{v / 1e6:g}M" if abs(v) >= 1e6 else f"{v / 1e3:g}k")
     (ax.xaxis if axis == "x" else ax.yaxis).set_major_formatter(fmt)
 
 
@@ -265,15 +266,20 @@ def fig_dqn_loss(results: Results, out: Path) -> None:
         ax.set_ylabel(ylabel)
         if column == "loss":
             ax.set_yscale("log")
-            plain = matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}")
-            ax.yaxis.set_major_formatter(plain)
-            ax.yaxis.set_minor_formatter(plain)
+            ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(subs=(1.0, 2.0, 5.0)))  # 1-2-5 ticks only
+            ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        if column == "epsilon":
+            ax.set_ylim(0, 1.05)  # show where the floor sits
     axes[-1].set_xlabel("training frames")
     thousands(axes[-1])
     axes[0].set_title(f"DQN training diagnostics ({seeds}, config: {results.best.get('dqn', '?')}; Q in scaled-reward units)",
                       loc="left")
     fig.tight_layout()
     save(fig, out, "dqn_loss.png")
+
+
+ENTROPY_STYLES = {0.0: (0, (4, 2)), 0.01: (0, (6, 2, 1, 2)), 0.05: (0, (1, 1.5))}  # linestyle per entropy coefficient
 
 
 def fig_pg_entropy(results: Results, out: Path) -> None:
@@ -288,16 +294,25 @@ def fig_pg_entropy(results: Results, out: Path) -> None:
         grid, mean, sd = band(curves)
         colour = ALGO_COLOURS[algo]
         ax.fill_between(grid, mean - sd, mean + sd, color=colour, alpha=0.22, linewidth=0)
-        ax.plot(grid, mean, color=colour, label=f"best ({results.best.get(algo, '?')})")
-        for run_id, style in (("entropy_0", (0, (4, 2))), ("entropy_0.05", (0, (1, 1.5))), ("entropy_0.01", (0, (6, 2, 1, 2)))):
-            row = results.sweep[(results.sweep["algo"] == algo) & (results.sweep["run_id"] == run_id)]
-            if row.empty or run_id == results.best.get(algo):
+        sweep = results.sweep[results.sweep["algo"] == algo] if not results.sweep.empty else results.sweep
+        best_row = sweep[sweep["run_id"] == results.best.get(algo)]
+        best_coef = float(best_row.iloc[0]["cfg_entropy_coef"]) if not best_row.empty else np.nan
+        ax.plot(grid, mean, color=colour, label=f"best: {results.best.get(algo, '?')} (coef {best_coef:g})")
+        # one single-seed sweep run per other entropy coefficient (REINFORCE's baseline is its coefficient-0 run)
+        shown = {best_coef}
+        for run_id in ("baseline", "entropy_0", "entropy_0.01", "entropy_0.05"):
+            row = sweep[sweep["run_id"] == run_id]
+            if row.empty or "cfg_entropy_coef" not in row:
                 continue
+            coef = float(row.iloc[0]["cfg_entropy_coef"])
             u = load_updates(row.iloc[0]["log_dir"])
-            if "entropy" not in u:  # older A2C logs omit entropy when its coefficient is 0
+            if coef in shown or "entropy" not in u:
                 continue
+            shown.add(coef)
             curve = u["entropy"].rolling(max(3, len(u) // 60), min_periods=1).mean().groupby(u["frames"]).mean()
-            ax.plot(curve.index, curve.to_numpy(), color=colour, linewidth=1.2, linestyle=style, label=run_id)
+            label = f"coef {coef:g}" + (" (baseline)" if run_id == "baseline" else "")
+            ax.plot(curve.index, curve.to_numpy(), color=colour, linewidth=1.2, linestyle=ENTROPY_STYLES.get(coef, "-."),
+                    label=label)
         ax.axhline(np.log(12), color=MUTED, linewidth=1, linestyle=":")
         ax.set_title(f"{ALGO_LABELS[algo]} ({seeds})", loc="left")
         ax.set_xlabel("training frames")
@@ -323,24 +338,34 @@ def convergence_table(results: Results) -> pd.DataFrame:
 
 
 def fig_episodes_to_converge(results: Results, out: Path) -> None:
+    """Episodes to converge (the rubric's measure) beside frames to converge (the shared budget).
+
+    Two panels with their own scales, not a dual axis: early DQN episodes are short (near-random
+    exploration ends them sooner), so the two measures rank the algorithms differently.
+    """
     conv = convergence_table(results)
     if conv["episodes_to_converge"].isna().all():
         raise Skip("no run improved enough to measure convergence")
-    stats = conv.groupby("algo", sort=False)["episodes_to_converge"].agg(["mean", "std", "count"]).reindex(ALGOS)
-    fig, ax = plt.subplots(figsize=(6.8, 3.4))
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.4))
     x = np.arange(len(ALGOS))
-    ax.bar(x, stats["mean"], yerr=stats["std"].fillna(0), color=[ALGO_COLOURS[a] for a in ALGOS], width=0.6,
-           edgecolor=SURFACE, linewidth=2, capsize=4, error_kw={"ecolor": INK2, "elinewidth": 1})
-    for i, (mean, sd) in enumerate(zip(stats["mean"], stats["std"].fillna(0), strict=True)):
-        if not np.isnan(mean):  # above the error bar, never on it
-            ax.annotate(f"{mean:,.0f}", xy=(i, mean + sd), xytext=(0, 4), textcoords="offset points", ha="center",
-                        va="bottom", fontsize=8.5, color=INK)
-    ax.margins(y=0.12)
-    ax.set_xticks(x, [ALGO_LABELS[a] for a in ALGOS])
-    ax.set_ylabel("episodes to converge")
-    ax.set_title("Episodes until the 50-episode mean reaches 90% of its final gain (mean ± s.d. over seeds)",
-                 loc="left", fontsize=9.5)
-    ax.grid(axis="x", visible=False)
+    panels = (("episodes_to_converge", "episodes", lambda v: f"{v:,.0f}"),
+              ("frames_to_converge", "training frames (decisions)", lambda v: f"{v / 1e3:,.0f}k"))
+    for ax, (column, ylabel, fmt) in zip(axes, panels, strict=True):
+        stats = conv.groupby("algo", sort=False)[column].agg(["mean", "std"]).reindex(ALGOS)
+        ax.bar(x, stats["mean"], yerr=stats["std"].fillna(0), color=[ALGO_COLOURS[a] for a in ALGOS], width=0.6,
+               edgecolor=SURFACE, linewidth=2, capsize=4, error_kw={"ecolor": INK2, "elinewidth": 1})
+        for i, (mean, sd) in enumerate(zip(stats["mean"], stats["std"].fillna(0), strict=True)):
+            if not np.isnan(mean):  # above the error bar, never on it
+                ax.annotate(fmt(mean), xy=(i, mean + sd), xytext=(0, 4), textcoords="offset points", ha="center",
+                            va="bottom", fontsize=8.5, color=INK)
+        ax.margins(y=0.12)
+        ax.set_xticks(x, [ALGO_LABELS[a] for a in ALGOS])
+        ax.set_title(f"{ylabel} to converge", loc="left", fontsize=10)
+        ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _, f=fmt: "0" if v == 0 else f(v)))
+        ax.grid(axis="x", visible=False)
+    fig.suptitle(f"When the {WINDOW}-episode mean return reaches 90% of its final gain (mean ± s.d. over seeds)",
+                 fontsize=10.5, fontweight="bold", x=0.01, ha="left")
+    fig.tight_layout()
     save(fig, out, "episodes_to_converge.png")
 
 
@@ -357,7 +382,7 @@ def generalisation_table(results: Results) -> pd.DataFrame:
             rows.append({"policy": ALGO_LABELS[algo], "set": set_name, "return_mean": final[col].mean(),
                          "return_sd_across_seeds": final[col].std(ddof=1) if len(final) > 1 else 0.0,
                          "infections_averted_mean": final[f"{set_name}_infections_averted_mean"].mean(),
-                         "seeds": len(final)})
+                         "training_seeds": len(final)})
     for policy in ("greedy", "random", "do_nothing"):
         for set_name in EVAL_SETS:
             df = results.baseline_set(set_name)
@@ -365,7 +390,7 @@ def generalisation_table(results: Results) -> pd.DataFrame:
             rows.append({"policy": BASELINE_STYLE[policy][2], "set": set_name, "return_mean": df["return"].mean(),
                          "return_sd_across_seeds": float("nan"),
                          "infections_averted_mean": df["infections_averted"].mean() if "infections_averted" in df else float("nan"),
-                         "seeds": 0})
+                         "training_seeds": float("nan")})  # fixed policies, nothing trained
     return pd.DataFrame(rows)
 
 
