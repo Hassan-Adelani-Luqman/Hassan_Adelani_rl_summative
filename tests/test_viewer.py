@@ -146,13 +146,11 @@ def test_websocket_streams_a_whole_episode(client):
         assert nxt["type"] == "episode" and nxt["seed"] == HELD_OUT_SEEDS[1] + 1
 
 
-def test_websocket_reports_a_missing_model():
-    app = create_app(Settings(model_dirs={}, default_algo="dqn"))
-    app_models = Path(ROOT / "models" / "dqn")
-    if (app_models / "best" / "model.pt").exists() or list(app_models.glob("*/model.pt")):
-        pytest.skip("a DQN model exists in this checkout")
+def test_websocket_reports_a_missing_model(tmp_path):
+    app = create_app(Settings(model_dirs={"dqn": tmp_path / "no_such_model"}, default_algo="dqn"))
     with TestClient(app) as c, c.websocket_connect("/ws/sim?algo=dqn") as ws:
-        assert ws.receive_json()["type"] == "error"
+        message = ws.receive_json()
+    assert message["type"] == "error"
 
 
 def test_play_runs_in_the_terminal(ppo_model):
