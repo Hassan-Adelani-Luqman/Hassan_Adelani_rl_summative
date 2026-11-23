@@ -334,10 +334,25 @@ class TorchPolicy:
                           batch_size=[1])
 
     @torch.no_grad()
-    def __call__(self, obs: np.ndarray) -> int:
+    def act_and_explain(self, obs: np.ndarray) -> tuple[int, dict[str, Any]]:
+        """The action plus what the agent "thinks": probabilities (PG) or Q-values (DQN).
+
+        One forward pass, so the action is exactly what ``__call__`` would return. Invalid
+        actions have value ``None``.
+        """
         mode = ExplorationType.RANDOM if self.sample else ExplorationType.DETERMINISTIC
         with set_exploration_type(mode):
-            return int(self.actor(self.as_tensordict(obs))["action"].item())
+            out = self.actor(self.as_tensordict(obs))
+        mask = out["action_mask"][0]
+        if "logits" in out.keys():
+            kind, values = "probability", torch.softmax(out["logits"][0].masked_fill(~mask, float("-inf")), -1)
+        else:
+            kind, values = "q_value", out["action_value"][0]
+        shown = [round(float(v), 4) if valid else None for v, valid in zip(values.tolist(), mask.tolist(), strict=True)]
+        return int(out["action"].item()), {"kind": kind, "values": shown, "mask": mask.tolist()}
+
+    def __call__(self, obs: np.ndarray) -> int:
+        return self.act_and_explain(obs)[0]
 
 
 @lru_cache(maxsize=16)
