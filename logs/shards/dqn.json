@@ -1,0 +1,98 @@
+{
+  "runs": {
+    "dqn/lr_1e-4": {
+      "run": "dqn/lr_1e-4",
+      "status": "done",
+      "seconds": 2184.9,
+      "fps": 458.6,
+      "return_mean": -443.564282815779
+    },
+    "dqn/gamma_0.95": {
+      "run": "dqn/gamma_0.95",
+      "status": "done",
+      "seconds": 2210.6,
+      "fps": 453.2,
+      "return_mean": -457.932215452968
+    },
+    "dqn/baseline": {
+      "run": "dqn/baseline",
+      "status": "done",
+      "seconds": 2227.8,
+      "fps": 449.7,
+      "return_mean": -441.83285659511944
+    },
+    "dqn/lr_2e-3": {
+      "run": "dqn/lr_2e-3",
+      "status": "done",
+      "seconds": 2326.6,
+      "fps": 430.5,
+      "return_mean": -495.1218831891992
+    },
+    "dqn/batch_32": {
+      "run": "dqn/batch_32",
+      "status": "done",
+      "seconds": 2159.5,
+      "fps": 463.7,
+      "return_mean": -474.09010729368197
+    },
+    "dqn/buffer_10k": {
+      "run": "dqn/buffer_10k",
+      "status": "done",
+      "seconds": 2278.8,
+      "fps": 439.3,
+      "return_mean": -455.08023398651477
+    },
+    "dqn/gamma_0.999": {
+      "run": "dqn/gamma_0.999",
+      "status": "done",
+      "seconds": 2317.6,
+      "fps": 432.0,
+      "return_mean": -461.87928677168094
+    },
+    "dqn/batch_512": {
+      "run": "dqn/batch_512",
+      "status": "done",
+      "seconds": 2879.9,
+      "fps": 347.5,
+      "return_mean": -432.1051022902217
+    },
+    "dqn/eps_fast": {
+      "run": "dqn/eps_fast",
+      "status": "done",
+      "seconds": 2138.3,
+      "fps": 468.2,
+      "return_mean": -444.9756692756284
+    },
+    "dqn/target_hard_2000": {
+      "run": "dqn/target_hard_2000",
+      "status": "done",
+      "seconds": 2211.3,
+      "fps": 452.8,
+      "return_mean": -483.7025838019233
+    },
+    "dqn/eps_slow_end_0.1": {
+      "run": "dqn/eps_slow_end_0.1",
+      "status": "done",
+      "seconds": 2312.5,
+      "fps": 432.9,
+      "return_mean": -513.1834315371394
+    },
+    "dqn/target_soft": {
+      "run": "dqn/target_soft",
+      "status": "done",
+      "seconds": 2029.0,
+      "fps": 493.3,
+      "return_mean": -437.09288233446233
+    },
+    "dqn/double_dqn": {
+      "run": "dqn/double_dqn",
+      "status": "done",
+      "seconds": 1545.9,
+      "fps": 647.6,
+      "return_mean": -433.7860152613479
+    }
+  },
+  "shard": "dqn",
+  "total": 13,
+  "last_started": "2026-11-23 05:34:47"
+}

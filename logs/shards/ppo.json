@@ -1,0 +1,98 @@
+{
+  "runs": {
+    "ppo/lr_1e-3": {
+      "run": "ppo/lr_1e-3",
+      "status": "done",
+      "seconds": 1153.5,
+      "fps": 873.1,
+      "return_mean": -495.38694236533854
+    },
+    "ppo/clip_0.1": {
+      "run": "ppo/clip_0.1",
+      "status": "done",
+      "seconds": 1178.1,
+      "fps": 854.8,
+      "return_mean": -478.84991626129516
+    },
+    "ppo/baseline": {
+      "run": "ppo/baseline",
+      "status": "done",
+      "seconds": 1192.5,
+      "fps": 844.4,
+      "return_mean": -489.50202835720415
+    },
+    "ppo/lr_1e-4": {
+      "run": "ppo/lr_1e-4",
+      "status": "done",
+      "seconds": 1267.6,
+      "fps": 794.1,
+      "return_mean": -632.4947025791848
+    },
+    "ppo/clip_0.3": {
+      "run": "ppo/clip_0.3",
+      "status": "done",
+      "seconds": 1170.4,
+      "fps": 859.3,
+      "return_mean": -475.5280318601153
+    },
+    "ppo/lambda_0.99": {
+      "run": "ppo/lambda_0.99",
+      "status": "done",
+      "seconds": 1172.0,
+      "fps": 858.2,
+      "return_mean": -492.8982220089458
+    },
+    "ppo/epochs_2": {
+      "run": "ppo/epochs_2",
+      "status": "done",
+      "seconds": 1159.3,
+      "fps": 867.6,
+      "return_mean": -551.3461089899316
+    },
+    "ppo/lambda_0.9": {
+      "run": "ppo/lambda_0.9",
+      "status": "done",
+      "seconds": 1285.4,
+      "fps": 781.7,
+      "return_mean": -628.2951123458502
+    },
+    "ppo/entropy_0": {
+      "run": "ppo/entropy_0",
+      "status": "done",
+      "seconds": 1201.3,
+      "fps": 837.2,
+      "return_mean": -484.9734985608208
+    },
+    "ppo/entropy_0.05": {
+      "run": "ppo/entropy_0.05",
+      "status": "done",
+      "seconds": 1193.0,
+      "fps": 842.9,
+      "return_mean": -574.1272873743569
+    },
+    "ppo/epochs_10": {
+      "run": "ppo/epochs_10",
+      "status": "done",
+      "seconds": 1439.5,
+      "fps": 697.9,
+      "return_mean": -466.5889569612212
+    },
+    "ppo/minibatch_64": {
+      "run": "ppo/minibatch_64",
+      "status": "done",
+      "seconds": 1469.7,
+      "fps": 682.7,
+      "return_mean": -500.4377542234548
+    },
+    "ppo/rollout_256": {
+      "run": "ppo/rollout_256",
+      "status": "done",
+      "seconds": 731.6,
+      "fps": 1377.3,
+      "return_mean": -441.64171372683495
+    }
+  },
+  "shard": "ppo",
+  "total": 13,
+  "last_started": "2026-11-23 05:35:14"
+}

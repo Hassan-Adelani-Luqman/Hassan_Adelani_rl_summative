@@ -1,0 +1,91 @@
+{
+  "runs": {
+    "reinforce/gamma_0.95": {
+      "run": "reinforce/gamma_0.95",
+      "status": "done",
+      "seconds": 1006.2,
+      "fps": 1002.9,
+      "return_mean": -760.1034361726795
+    },
+    "reinforce/lr_3e-3": {
+      "run": "reinforce/lr_3e-3",
+      "status": "done",
+      "seconds": 1018.2,
+      "fps": 991.3,
+      "return_mean": -1370.4868058434286
+    },
+    "reinforce/baseline": {
+      "run": "reinforce/baseline",
+      "status": "done",
+      "seconds": 1037.7,
+      "fps": 971.9,
+      "return_mean": -787.474296204337
+    },
+    "reinforce/lr_3e-4": {
+      "run": "reinforce/lr_3e-4",
+      "status": "done",
+      "seconds": 1045.7,
+      "fps": 964.4,
+      "return_mean": -916.462445252245
+    },
+    "reinforce/episodes_4": {
+      "run": "reinforce/episodes_4",
+      "status": "done",
+      "seconds": 1029.6,
+      "fps": 979.0,
+      "return_mean": -1381.7740637238262
+    },
+    "reinforce/gamma_0.999": {
+      "run": "reinforce/gamma_0.999",
+      "status": "done",
+      "seconds": 1066.1,
+      "fps": 944.1,
+      "return_mean": -889.7321209803944
+    },
+    "reinforce/no_baseline": {
+      "run": "reinforce/no_baseline",
+      "status": "done",
+      "seconds": 1047.1,
+      "fps": 961.2,
+      "return_mean": -748.2195679513527
+    },
+    "reinforce/episodes_64": {
+      "run": "reinforce/episodes_64",
+      "status": "done",
+      "seconds": 1055.3,
+      "fps": 954.8,
+      "return_mean": -845.5862418409093
+    },
+    "reinforce/no_baseline_no_norm": {
+      "run": "reinforce/no_baseline_no_norm",
+      "status": "done",
+      "seconds": 958.5,
+      "fps": 1052.4,
+      "return_mean": -1720.84
+    },
+    "reinforce/no_return_norm": {
+      "run": "reinforce/no_return_norm",
+      "status": "done",
+      "seconds": 1014.1,
+      "fps": 993.1,
+      "return_mean": -800.6453096457203
+    },
+    "reinforce/entropy_0.01": {
+      "run": "reinforce/entropy_0.01",
+      "status": "done",
+      "seconds": 1068.6,
+      "fps": 940.1,
+      "return_mean": -713.9916620096305
+    },
+    "reinforce/entropy_0.05": {
+      "run": "reinforce/entropy_0.05",
+      "status": "done",
+      "seconds": 1087.9,
+      "fps": 922.6,
+      "return_mean": -1126.832627616514
+    }
+  },
+  "shard": "reinforce",
+  "total": 12,
+  "last_started": "2026-11-23 05:34:52"
+}

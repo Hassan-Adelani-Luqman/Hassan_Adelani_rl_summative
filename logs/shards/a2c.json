@@ -1,0 +1,105 @@
+{
+  "runs": {
+    "a2c/lr_7e-4": {
+      "run": "a2c/lr_7e-4",
+      "status": "done",
+      "seconds": 1115.4,
+      "fps": 905.0,
+      "return_mean": -1430.8511852868555
+    },
+    "a2c/gamma_0.95": {
+      "run": "a2c/gamma_0.95",
+      "status": "done",
+      "seconds": 1117.3,
+      "fps": 903.5,
+      "return_mean": -1443.0632031120113
+    },
+    "a2c/lr_1e-4": {
+      "run": "a2c/lr_1e-4",
+      "status": "done",
+      "seconds": 1135.6,
+      "fps": 888.9,
+      "return_mean": -1109.1426057633587
+    },
+    "a2c/baseline": {
+      "run": "a2c/baseline",
+      "status": "done",
+      "seconds": 1141.6,
+      "fps": 883.7,
+      "return_mean": -752.7625309044117
+    },
+    "a2c/rollout_64": {
+      "run": "a2c/rollout_64",
+      "status": "done",
+      "seconds": 1076.2,
+      "fps": 937.3,
+      "return_mean": -929.0895618943446
+    },
+    "a2c/gamma_0.999": {
+      "run": "a2c/gamma_0.999",
+      "status": "done",
+      "seconds": 1128.0,
+      "fps": 893.9,
+      "return_mean": -1050.6928600625017
+    },
+    "a2c/rollout_5": {
+      "run": "a2c/rollout_5",
+      "status": "done",
+      "seconds": 1308.8,
+      "fps": 769.3,
+      "return_mean": -1577.120983438295
+    },
+    "a2c/no_adv_norm": {
+      "run": "a2c/no_adv_norm",
+      "status": "done",
+      "seconds": 1545.7,
+      "fps": 648.4,
+      "return_mean": -1007.8948418573392
+    },
+    "a2c/lambda_0.8": {
+      "run": "a2c/lambda_0.8",
+      "status": "done",
+      "seconds": 1121.4,
+      "fps": 899.3,
+      "return_mean": -1599.5666590960411
+    },
+    "a2c/lambda_1.0": {
+      "run": "a2c/lambda_1.0",
+      "status": "done",
+      "seconds": 1144.8,
+      "fps": 880.2,
+      "return_mean": -810.3048186097467
+    },
+    "a2c/entropy_0": {
+      "run": "a2c/entropy_0",
+      "status": "done",
+      "seconds": 1138.1,
+      "fps": 885.8,
+      "return_mean": -866.5573942386493
+    },
+    "a2c/entropy_0.05": {
+      "run": "a2c/entropy_0.05",
+      "status": "done",
+      "seconds": 1459.8,
+      "fps": 686.4,
+      "return_mean": -997.4209866629158
+    },
+    "a2c/critic_coef_1.0": {
+      "run": "a2c/critic_coef_1.0",
+      "status": "done",
+      "seconds": 942.6,
+      "fps": 1066.7,
+      "return_mean": -810.5650862296086
+    },
+    "a2c/grad_clip_5": {
+      "run": "a2c/grad_clip_5",
+      "status": "done",
+      "seconds": 931.6,
+      "fps": 1079.4,
+      "return_mean": -821.8858265443104
+    }
+  },
+  "shard": "a2c",
+  "total": 14,
+  "last_started": "2026-11-23 05:35:16"
+}

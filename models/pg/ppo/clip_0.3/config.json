@@ -1,0 +1,67 @@
+{
+  "config": {
+    "algo": "ppo",
+    "run_id": "clip_0.3",
+    "seed": 0,
+    "total_frames": 1000000,
+    "num_envs": 8,
+    "scenario": "default",
+    "reward_scale": 0.02,
+    "hidden": [
+      128,
+      128
+    ],
+    "activation": "tanh",
+    "lr": 0.0003,
+    "gamma": 0.99,
+    "max_grad_norm": 0.5,
+    "buffer_size": 100000,
+    "batch_size": 128,
+    "steps_per_collect": 4,
+    "updates_per_collect": 4,
+    "eps_init": 1.0,
+    "eps_end": 0.05,
+    "eps_fraction": 0.3,
+    "target_update": "hard",
+    "target_interval": 500,
+    "tau": 0.005,
+    "double_dqn": false,
+    "init_random_frames": 5000,
+    "rollout_len": 128,
+    "gae_lambda": 0.95,
+    "entropy_coef": 0.01,
+    "critic_coef": 0.5,
+    "normalize_advantage": true,
+    "clip_epsilon": 0.3,
+    "ppo_epochs": 4,
+    "minibatch_size": 256,
+    "episodes_per_update": 16,
+    "value_baseline": true,
+    "normalize_returns": true,
+    "eval_sets": [
+      "held_out"
+    ],
+    "eval_limit": null,
+    "logs_root": "/kaggle/working/out/logs",
+    "models_root": "/kaggle/working/out/models"
+  },
+  "env_version": "1.0",
+  "versions": {
+    "torch": "2.15.0+cpu",
+    "torchrl": "0.15.0",
+    "tensordict": "0.15.6",
+    "python": "3.12.3"
+  },
+  "frames": 1000448,
+  "updates": 15632,
+  "episodes": 26829,
+  "train_seconds": 1164.3,
+  "fps": 859.3,
+  "total_seconds": 1170.4,
+  "argmax_held_out": {
+    "return_mean": -471.31852277029685,
+    "return_std": 133.12026787349868,
+    "infections_averted_mean": 780.4742514300037,
+    "stranded_rate": 0.34
+  }
+}
