@@ -1,0 +1,20 @@
+# Local-only assistant files
+.claude/
+
+# Python / uv
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Kaggle build artefacts (source bundles, pulled raw outputs)
+cloud/kaggle/build/
+cloud/kaggle/pulled/
+
+# Large intermediate training artefacts (best models + summary logs are committed)
+models/**/checkpoints/
+
+# OS / editor
+.DS_Store
+.vscode/
