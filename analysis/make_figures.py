@@ -470,7 +470,13 @@ def fig_action_mix(results: Results, out: Path) -> None:
 
 
 def best_overall(results: Results) -> tuple[str, Path]:
-    """The algorithm with the best final (else sweep) held-out return, and one of its model dirs."""
+    """The published default model (models/best.json, the one play.py shows), so the figure, the
+    viewer and the video replay the same agent. Without one (a dev tree), the run with the best
+    final (else sweep) held-out return."""
+    published = results.models_root / "best.json"
+    if published.exists():
+        algo = json.loads(published.read_text())["algo"]
+        return algo, model_dir(results.models_root, algo, "best")
     source = results.final if not results.final.empty else results.sweep
     if source.empty:
         raise Skip("no finished runs")

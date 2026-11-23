@@ -12,7 +12,15 @@ import pytest
 
 from analysis.best_configs import select_best
 from analysis.load_runs import load_runs, model_dir
-from analysis.make_figures import FIGURES, TABLES, build_all, changed_factors, episodes_to_converge
+from analysis.make_figures import (
+    FIGURES,
+    TABLES,
+    best_overall,
+    build_all,
+    changed_factors,
+    episodes_to_converge,
+    load_results,
+)
 from environment.custom_env import ENV_VERSION
 from training.common import ALGOS, default_config
 from training.seeds import EVAL_SETS, HELD_OUT_SEEDS, seed_hash
@@ -155,3 +163,16 @@ def test_compacted_logs_load_like_the_originals(tmp_path):
     assert list(after.columns) == list(before.columns) and (after["episode"] == before["episode"]).all()
     np.testing.assert_allclose(after["return"], before["return"], rtol=1e-4)
     assert load_updates(tmp_path)["loss"].iloc[0] == 0.12346
+
+
+def test_timeline_replays_the_published_default_model(tree):
+    """With models/best.json, the timeline shows the same agent as play.py, not a re-chosen one."""
+    logs, models, assets = tree
+    algo, directory = best_overall(load_results(logs, models, assets / "tables"))
+    assert directory.name.startswith("final_")  # no published model in this tree: best final run
+    (models / "best.json").write_text(json.dumps({"algo": "reinforce"}))
+    try:
+        assert best_overall(load_results(logs, models, assets / "tables")) == (
+            "reinforce", models / "pg" / "reinforce" / "best")
+    finally:
+        (models / "best.json").unlink()
