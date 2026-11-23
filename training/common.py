@@ -126,7 +126,8 @@ class RunConfig:
 ALGO_DEFAULTS: dict[str, dict[str, Any]] = {
     "dqn": {"lr": 5e-4, "activation": "relu", "max_grad_norm": 10.0},
     "reinforce": {"lr": 1e-3, "entropy_coef": 0.0},
-    "a2c": {"lr": 7e-4, "rollout_len": 16, "max_grad_norm": 0.5},
+    # A2C at lr 7e-4 collapsed its entropy within ~80 updates in smoke runs; 2.5e-4 learns steadily.
+    "a2c": {"lr": 2.5e-4, "rollout_len": 16, "max_grad_norm": 0.5},
     "ppo": {"lr": 3e-4, "rollout_len": 128, "max_grad_norm": 0.5},
 }
 
@@ -135,7 +136,8 @@ ALGO_FIELDS: dict[str, tuple[str, ...]] = {
     "dqn": ("lr", "gamma", "buffer_size", "batch_size", "eps_end", "eps_fraction", "target_update",
             "target_interval", "tau", "double_dqn"),
     "reinforce": ("lr", "gamma", "episodes_per_update", "value_baseline", "entropy_coef", "normalize_returns"),
-    "a2c": ("lr", "gamma", "rollout_len", "gae_lambda", "entropy_coef", "critic_coef", "max_grad_norm"),
+    "a2c": ("lr", "gamma", "rollout_len", "gae_lambda", "entropy_coef", "critic_coef", "max_grad_norm",
+            "normalize_advantage"),
     "ppo": ("lr", "gamma", "clip_epsilon", "gae_lambda", "ppo_epochs", "minibatch_size", "entropy_coef",
             "rollout_len"),
 }
@@ -301,15 +303,29 @@ class RunLogger:
 # ------------------------------------------------------------------------------ evaluation
 
 
+def policy_mode(algo: str) -> str:
+    """How each algorithm's learned policy is evaluated.
+
+    DQN learns a greedy policy over Q-values, so it acts by argmax. REINFORCE, A2C and PPO
+    optimise the expected return of a *stochastic* policy, which deliberately spreads
+    probability over equally good villages; its argmax is a different policy (early in
+    training it simply stays at the hub). They are evaluated by sampling, seeded per
+    episode so results are reproducible.
+    """
+    return "greedy" if algo == "dqn" else "sample"
+
+
 class TorchPolicy:
     """Adapts a trained TorchRL actor to the baseline Policy interface (obs -> action)."""
 
-    def __init__(self, actor: nn.Module, name: str) -> None:
+    def __init__(self, actor: nn.Module, name: str, sample: bool = False) -> None:
         self.actor = actor
         self.name = name
+        self.sample = sample
 
     def reset(self, seed: int) -> None:
-        pass
+        if self.sample:
+            torch.manual_seed(seed)  # same actions for the same episode, every time
 
     @staticmethod
     def as_tensordict(obs: np.ndarray) -> TensorDict:
@@ -319,7 +335,8 @@ class TorchPolicy:
 
     @torch.no_grad()
     def __call__(self, obs: np.ndarray) -> int:
-        with set_exploration_type(ExplorationType.DETERMINISTIC):
+        mode = ExplorationType.RANDOM if self.sample else ExplorationType.DETERMINISTIC
+        with set_exploration_type(mode):
             return int(self.actor(self.as_tensordict(obs))["action"].item())
 
 
@@ -330,6 +347,11 @@ def _do_nothing_reference(seeds: tuple[int, ...], scenario: str) -> pd.DataFrame
 
 def evaluate_policy(policy, eval_sets: Iterable[str] = ("held_out",), limit: int | None = None) -> dict[str, Any]:
     """Evaluate ``policy`` on named seed sets; returns summary metrics and per-episode returns per set."""
+    with torch.random.fork_rng():  # seeded sampling must not disturb anyone else's random state
+        return _evaluate_sets(policy, eval_sets, limit)
+
+
+def _evaluate_sets(policy, eval_sets: Iterable[str], limit: int | None) -> dict[str, Any]:
     results: dict[str, Any] = {}
     for set_name in eval_sets:
         seeds, scenario = EVAL_SETS[set_name]
@@ -340,6 +362,7 @@ def evaluate_policy(policy, eval_sets: Iterable[str] = ("held_out",), limit: int
         summary = summarize(episodes).iloc[0].to_dict()
         results[set_name] = {
             **{k: (v.item() if hasattr(v, "item") else v) for k, v in summary.items()},
+            "policy_mode": "sample" if getattr(policy, "sample", False) else "greedy",
             "seed_hash": seed_hash(seeds),
             "returns": episodes["return"].round(3).tolist(),
             "infections": episodes["infections"].round(2).tolist(),
@@ -377,8 +400,11 @@ def save_run(cfg: RunConfig, modules: dict[str, nn.Module], stats: dict[str, Any
     return log_dir
 
 
-def load_policy(model_dir: str | Path) -> TorchPolicy:
-    """Rebuild a saved actor from ``config.json`` + ``model.pt`` and wrap it as a policy."""
+def load_policy(model_dir: str | Path, sample: bool | None = None) -> TorchPolicy:
+    """Rebuild a saved actor from ``config.json`` + ``model.pt`` and wrap it as a policy.
+
+    ``sample`` defaults to the algorithm's evaluation mode (see ``policy_mode``).
+    """
     model_dir = Path(model_dir)
     meta = json.loads((model_dir / "config.json").read_text())
     cfg = RunConfig.from_dict(meta["config"])
@@ -393,7 +419,9 @@ def load_policy(model_dir: str | Path) -> TorchPolicy:
         actor = build_actor(cfg)
     actor.load_state_dict(state["actor"])
     actor.eval()
-    return TorchPolicy(actor, f"{cfg.algo}:{cfg.run_id}")
+    if sample is None:
+        sample = policy_mode(cfg.algo) == "sample"
+    return TorchPolicy(actor, f"{cfg.algo}:{cfg.run_id}", sample=sample)
 
 
 class Timer:

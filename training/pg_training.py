@@ -189,9 +189,15 @@ def train(cfg: RunConfig) -> dict[str, Any]:
     logger.close()
 
     train_seconds = timer.elapsed()
-    evaluation = evaluate_policy(TorchPolicy(actor.eval(), f"{cfg.algo}:{cfg.run_id}"), cfg.eval_sets, cfg.eval_limit)
+    name = f"{cfg.algo}:{cfg.run_id}"
+    actor.eval()
+    # Primary: the stochastic policy the algorithm optimises (seeded sampling). Secondary: its argmax.
+    evaluation = evaluate_policy(TorchPolicy(actor, name, sample=True), cfg.eval_sets, cfg.eval_limit)
+    argmax = evaluate_policy(TorchPolicy(actor, name, sample=False), ["held_out"], cfg.eval_limit)["held_out"]
     stats = {"frames": frames, "updates": updates, "episodes": logger.episodes, "train_seconds": round(train_seconds, 1),
-             "fps": round(frames / train_seconds, 1), "total_seconds": round(timer.elapsed(), 1)}
+             "fps": round(frames / train_seconds, 1), "total_seconds": round(timer.elapsed(), 1),
+             "argmax_held_out": {k: argmax[k] for k in ("return_mean", "return_std", "infections_averted_mean",
+                                                        "stranded_rate")}}
     modules = {"actor": actor, "critic": critic}
     save_run(cfg, modules, stats, evaluation)
     return {"stats": stats, "eval": evaluation, "actor": actor}

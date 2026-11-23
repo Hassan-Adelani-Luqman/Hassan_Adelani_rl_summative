@@ -136,13 +136,19 @@ def test_micro_run_trains_saves_and_reloads(algo, tmp_path):
     meta = json.loads((model_dir / "config.json").read_text())
     assert RunConfig.from_dict(meta["config"]) == cfg
 
-    # the reloaded model acts exactly like the trained one, and re-evaluates identically
-    trained, loaded = TorchPolicy(result["actor"], "trained"), load_policy(model_dir)
+    # the reloaded model acts exactly like the trained one (argmax) ...
+    trained, loaded_argmax = TorchPolicy(result["actor"], "trained"), load_policy(model_dir, sample=False)
     for obs in np.random.default_rng(0).random((25, 55), dtype=np.float32):
-        assert trained(obs) == loaded(obs)
+        assert trained(obs) == loaded_argmax(obs)
+    # ... and re-evaluates identically in its own evaluation mode (seeded sampling for PG)
+    loaded = load_policy(model_dir)
+    assert loaded.sample == (algo != "dqn")
     again = evaluate_policy(loaded, ["held_out"], limit=2)["held_out"]
     assert again["returns"] == saved["eval"]["held_out"]["returns"]
+    assert again["policy_mode"] == saved["eval"]["held_out"]["policy_mode"] == ("greedy" if algo == "dqn" else "sample")
     assert again["invalid_actions"] == 0  # the action mask keeps trained agents valid
+    if algo != "dqn":
+        assert "argmax_held_out" in saved
 
 
 def test_resume_skips_runs_that_already_have_eval_json(tmp_path):
