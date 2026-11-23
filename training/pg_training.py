@@ -120,8 +120,12 @@ def _train_actor_critic(cfg: RunConfig, env, actor, critic, logger: RunLogger) -
                 buffer.extend(data)
                 for _ in range(frames_per_batch // minibatch):
                     rows.append(_optimise(loss_module, buffer.sample(), optimiser, cfg))
+        metrics = _mean_metrics(rows)
+        if "entropy" not in metrics:  # A2CLoss skips entropy when its coefficient is 0; log it anyway
+            with torch.no_grad():
+                metrics["entropy"] = float(actor.get_dist(data).entropy().mean())  # no sampling, no RNG use
         updates += len(rows)
-        logger.update(frames=frames, updates=updates, lr=cfg.lr, **_mean_metrics(rows))
+        logger.update(frames=frames, updates=updates, lr=cfg.lr, **metrics)
     collector.shutdown()
     return frames, updates
 
