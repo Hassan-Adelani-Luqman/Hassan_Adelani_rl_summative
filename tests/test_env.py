@@ -370,6 +370,33 @@ def test_chw_reports_refresh_once_a_day():
     assert env.reported is day1
 
 
+# ------------------------------------------------------------------------------ freeze
+
+# Fingerprint of the frozen environment. If this test fails, the env's dynamics or reward
+# changed, so every training result is stale: bump ENV_VERSION, re-run the sweeps and the
+# final runs, then update the fingerprint.
+FROZEN_ENV = {"version": "1.0", "fingerprint": "53927bce262fdfb0"}
+
+
+def test_environment_is_frozen():
+    import hashlib
+    import json
+
+    from analysis.baselines import run_episode
+    from environment.custom_env import ENV_VERSION
+
+    values = []
+    for scenario in ("default", "heavy_rain", "shuffled_hotspots"):
+        env = AfyaSentinelEnv(scenario)
+        for policy in (DoNothing(), RandomPolicy(), Greedy()):
+            for seed in (0, 1):
+                r = run_episode(policy, seed, scenario, env)
+                values.append([round(r["return"], 4), round(r["infections"], 4), r["decisions"], r["termination"]])
+    fingerprint = hashlib.sha256(json.dumps(values).encode()).hexdigest()[:16]
+    assert ENV_VERSION == FROZEN_ENV["version"]
+    assert fingerprint == FROZEN_ENV["fingerprint"], "environment changed after the freeze; see the comment above"
+
+
 # ------------------------------------------------------------------------------ seeds and baselines
 
 

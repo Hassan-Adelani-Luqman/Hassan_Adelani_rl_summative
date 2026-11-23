@@ -30,7 +30,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-ENV_VERSION = "0.1"
+ENV_VERSION = "1.0"  # frozen: sweeps and results depend on these dynamics
 
 # ----------------------------------------------------------------------------------------
 # Public district map: Bugesera District, Eastern Province, Rwanda.
