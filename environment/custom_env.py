@@ -1,10 +1,12 @@
-"""Afya Sentinel: a mobile malaria early-detection van in an 8-village rainy-season district.
+"""Afya Sentinel: a mobile malaria early-detection van in Bugesera District, Rwanda.
 
-The agent dispatches one van from a district hub. It never sees true infections, only
-noisy, one-day-late fever reports from community health workers (CHWs), its own
-screening results and its stock levels. Rain drives transmission about five days later
-and also floods low-lying roads, so the villages that need the van most become the
-hardest to reach.
+Bugesera (Eastern Province) is one of Rwanda's highest-burden malaria districts: low-lying,
+with lakes, marshes and river wetlands. The agent dispatches one van from the district
+hub at Nyamata to villages in eight of its sectors during the rainy season. It never
+sees true infections, only noisy, one-day-late fever reports from community health
+workers (CHWs), its own screening results and its stock levels. Rain drives
+transmission about five days later and also floods the roads into wetland sectors, so
+the villages that need the van most become the hardest to reach.
 
 Key properties
 - Partially observable: per-village S/E/I/Sev/R counts are hidden (they are in ``info``).
@@ -31,59 +33,75 @@ from gymnasium import spaces
 ENV_VERSION = "0.1"
 
 # ----------------------------------------------------------------------------------------
-# Public district map. Location 0 is the hub; locations 1..8 are the villages.
+# Public district map: Bugesera District, Eastern Province, Rwanda.
+# Location 0 is the hub (Nyamata, the district headquarters); locations 1..8 each stand
+# for one village (umudugudu) in that sector, so populations are village-sized.
 # Village-indexed arrays (length 8) use village index = location - 1.
+#
+# Coordinates (lat, lon): Nyamata, Mwogo, Rilima, Gashora, Mayange and Mareba from their
+# Wikipedia articles; Ntarama from the Ntarama memorial; Rweru from Nemba (Rweru sector).
+# Juru has no published point: it is placed east of Mwogo, as Mwogo's article describes,
+# so its position is approximate. Roads and populations are stylised.
 # ----------------------------------------------------------------------------------------
 HUB = 0
 N_VILLAGES = 8
 N_LOCATIONS = N_VILLAGES + 1
 LOCATION_NAMES = (
-    "Hub",
-    "Baraka",
-    "Tumaini",
-    "Upendo",
-    "Neema",
-    "Amani",
-    "Faraja",
-    "Jabali",
-    "Mvuani",
+    "Nyamata",
+    "Mwogo",
+    "Juru",
+    "Rilima",
+    "Gashora",
+    "Rweru",
+    "Mayange",
+    "Mareba",
+    "Ntarama",
 )
 VILLAGE_NAMES = LOCATION_NAMES[1:]
-LOCATION_POS_KM = np.array(
+LOCATION_LATLON = np.array(
     [
-        [0.0, 0.0],  # Hub
-        [9.0, 11.0],  # Baraka
-        [19.0, 3.0],  # Tumaini (river)
-        [30.0, 13.0],  # Upendo
-        [13.0, -11.0],  # Neema (river)
-        [-13.0, 7.0],  # Amani
-        [-5.0, -16.0],  # Faraja (river)
-        [33.0, -7.0],  # Jabali (river)
-        [-23.0, -5.0],  # Mvuani
+        [-2.1483, 30.0907],  # Nyamata (hub)
+        [-2.0860, 30.1402],  # Mwogo
+        [-2.1000, 30.2200],  # Juru (approximate)
+        [-2.1597, 30.2258],  # Rilima
+        [-2.2074, 30.2455],  # Gashora: eastern lakes (wetland)
+        [-2.3525, 30.2175],  # Rweru: Lake Rweru, Burundi border (wetland)
+        [-2.2065, 30.1414],  # Mayange
+        [-2.2471, 30.0689],  # Mareba: near Lake Cyohoha North (wetland)
+        [-2.1126, 30.0501],  # Ntarama: swamps on the Kigali side (wetland)
     ]
+)
+_KM_PER_DEG_LAT = 110.57
+_KM_PER_DEG_LON = 111.32 * math.cos(math.radians(abs(LOCATION_LATLON[HUB, 0])))
+# (x east, y north) in km from Nyamata
+LOCATION_POS_KM = np.column_stack(
+    (
+        (LOCATION_LATLON[:, 1] - LOCATION_LATLON[HUB, 1]) * _KM_PER_DEG_LON,
+        (LOCATION_LATLON[:, 0] - LOCATION_LATLON[HUB, 0]) * _KM_PER_DEG_LAT,
+    )
 )
 POPULATION = np.array([420, 380, 300, 460, 350, 520, 280, 400], dtype=np.int64)
 TOTAL_POPULATION = int(POPULATION.sum())
-RIVER_VILLAGES = np.array([1, 3, 5, 6])  # village indices on the river floodplain
-INLAND_VILLAGES = np.setdiff1d(np.arange(N_VILLAGES), RIVER_VILLAGES)
+WETLAND_VILLAGES = np.array([3, 4, 6, 7])  # Gashora, Rweru, Mareba, Ntarama (village indices)
+INLAND_VILLAGES = np.setdiff1d(np.arange(N_VILLAGES), WETLAND_VILLAGES)
 
-# (location a, location b, flood-prone)
+# (location a, location b, flood-prone): roads into wetland sectors flood in heavy rain
 ROADS: tuple[tuple[int, int, bool], ...] = (
-    (0, 1, False),
-    (0, 2, True),
-    (0, 4, True),
-    (0, 5, False),
-    (0, 6, True),
-    (1, 3, False),
-    (2, 3, False),
-    (2, 7, True),
-    (4, 7, True),
-    (1, 5, False),
-    (5, 8, False),
-    (6, 8, True),
-    (4, 6, True),
+    (0, 1, False),  # Nyamata – Mwogo
+    (0, 3, False),  # Nyamata – Rilima
+    (0, 6, False),  # Nyamata – Mayange
+    (0, 7, True),  # Nyamata – Mareba
+    (0, 8, True),  # Nyamata – Ntarama
+    (1, 2, False),  # Mwogo – Juru
+    (2, 3, False),  # Juru – Rilima
+    (3, 4, True),  # Rilima – Gashora
+    (6, 4, True),  # Mayange – Gashora
+    (4, 5, True),  # Gashora – Rweru
+    (6, 5, True),  # Mayange – Rweru
+    (6, 7, True),  # Mayange – Mareba
+    (8, 7, True),  # Ntarama – Mareba
 )
-ROAD_WINDING = 1.3  # road km per straight-line km
+ROAD_WINDING = 1.4  # road km per straight-line km on hilly murram roads
 
 
 def _shortest_paths() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -215,10 +233,10 @@ class EnvParams:
     max_ticks: int = 60
     ticks_per_day: int = 2
     # van
-    fuel_capacity_km: float = 200.0
+    fuel_capacity_km: float = 150.0
     kit_capacity: int = 6  # screening batches
     net_capacity: int = 4  # bed-net bundles (one covers a village)
-    speed_km_per_tick: float = 22.0
+    speed_km_per_tick: float = 15.0  # effective, including murram roads and setting up on arrival
     max_travel_ticks: int = 4
     flood_slowdown: float = 1.5  # extra travel time on flooded km at rain = 1
     flood_fuel_extra: float = 0.3  # extra fuel on flooded km at rain = 1
@@ -238,7 +256,7 @@ class EnvParams:
     rain_mult_gain: float = 1.7
     hotspot_mult: float = 1.6
     n_hotspots: int = 2
-    hotspot_pool: str = "river"  # "river" | "all"
+    hotspot_pool: str = "wetland"  # "wetland" | "all"
     spillover: float = 0.15
     importation: float = 3e-4
     early_infectiousness: float = 0.5
@@ -329,7 +347,7 @@ class AfyaSentinelEnv(gym.Env):
         self._forecast_noise = rng.normal(0.0, p.forecast_noise, n_rain)
         self._precompute_weather()
 
-        pool = RIVER_VILLAGES if p.hotspot_pool == "river" else np.arange(N_VILLAGES)
+        pool = WETLAND_VILLAGES if p.hotspot_pool == "wetland" else np.arange(N_VILLAGES)
         self.hotspots = np.sort(rng.choice(pool, size=p.n_hotspots, replace=False))
         is_hot = np.zeros(N_VILLAGES, dtype=bool)
         is_hot[self.hotspots] = True
