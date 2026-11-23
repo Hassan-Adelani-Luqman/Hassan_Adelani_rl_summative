@@ -1,0 +1,42 @@
+{
+  "algo": "dqn",
+  "rule": "per algorithm, the final seed with the highest return on the training-seed evaluation set; overall, the algorithm with the highest mean of that return across its seeds",
+  "models": {
+    "dqn": {
+      "run_id": "final_batch_512_seed1",
+      "seed": 1,
+      "train_return": -435.4,
+      "train_return_mean_over_seeds": -437.5,
+      "held_out_return": -429.7,
+      "held_out_return_mean_over_seeds": -426.7,
+      "seeds": 3
+    },
+    "reinforce": {
+      "run_id": "final_entropy_0.01_seed0",
+      "seed": 0,
+      "train_return": -704.5,
+      "train_return_mean_over_seeds": -749.1,
+      "held_out_return": -714.0,
+      "held_out_return_mean_over_seeds": -736.7,
+      "seeds": 3
+    },
+    "a2c": {
+      "run_id": "final_baseline_seed0",
+      "seed": 0,
+      "train_return": -738.9,
+      "train_return_mean_over_seeds": -790.2,
+      "held_out_return": -752.8,
+      "held_out_return_mean_over_seeds": -791.6,
+      "seeds": 3
+    },
+    "ppo": {
+      "run_id": "final_rollout_256_seed0",
+      "seed": 0,
+      "train_return": -446.4,
+      "train_return_mean_over_seeds": -464.4,
+      "held_out_return": -441.6,
+      "held_out_return_mean_over_seeds": -459.6,
+      "seeds": 3
+    }
+  }
+}
