@@ -1,0 +1,6 @@
+{
+  "dqn": "batch_512",
+  "reinforce": "entropy_0.01",
+  "a2c": "baseline",
+  "ppo": "rollout_256"
+}

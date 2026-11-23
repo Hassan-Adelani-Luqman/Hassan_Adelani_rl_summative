@@ -79,7 +79,7 @@ SWEEPS: dict[str, list[tuple[str, dict[str, Any]]]] = {
 SHARDS = (*ALGOS, "test", "final")
 TEST_FRAMES = 20_000
 FINAL_SEEDS = (0, 1, 2)
-BEST_CONFIGS_FILE = ROOT / "logs" / "best_configs.json"  # {algo: run_id}, written after the sweeps
+BEST_CONFIGS_FILE = ROOT / "training" / "best_configs.json"  # {algo: run_id}: chosen from the sweeps, input to "final"
 
 
 def sweep_configs(algo: str, **common: Any) -> list[RunConfig]:

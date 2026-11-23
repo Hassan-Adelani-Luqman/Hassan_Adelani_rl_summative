@@ -37,7 +37,7 @@ from analysis.tables import write_table  # noqa: E402
 from environment.custom_env import VILLAGE_NAMES  # noqa: E402
 from training.common import ALGO_FIELDS, ALGOS, PG_ALGOS, ROOT  # noqa: E402
 from training.seeds import EVAL_SETS, HELD_OUT_SEEDS  # noqa: E402
-from training.sweeps import SWEEPS  # noqa: E402
+from training.sweeps import BEST_CONFIGS_FILE, SWEEPS  # noqa: E402
 
 # ------------------------------------------------------------------------------ style
 SURFACE, INK, INK2, MUTED, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#8b8a85", "#e4e3df"
@@ -122,8 +122,9 @@ def load_results(logs_root: Path, models_root: Path, tables_dir: Path) -> Result
         runs = pd.DataFrame(columns=["algo", "run_id", "log_dir"])
     final = runs[runs["run_id"].astype(str).str.startswith("final_")] if not runs.empty else runs
     sweep = sweep_runs(runs) if not runs.empty else runs
-    best_file = logs_root / "best_configs.json"
-    best = json.loads(best_file.read_text()) if best_file.exists() else select_best(runs)
+    candidates = [logs_root / "best_configs.json", BEST_CONFIGS_FILE]  # a dev tree's own choice, else the repo's
+    best_file = next((f for f in candidates if f.exists()), None)
+    best = json.loads(best_file.read_text()) if best_file else select_best(runs)
     baselines_path = tables_dir / "baselines_episodes.csv"
     baselines = pd.read_csv(baselines_path) if baselines_path.exists() else pd.DataFrame(
         columns=["policy", "scenario", "seed", "return", "infections"])
