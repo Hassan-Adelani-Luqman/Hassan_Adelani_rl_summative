@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import subprocess
@@ -144,6 +145,39 @@ def test_websocket_streams_a_whole_episode(client):
         ws.send_json({"cmd": "next"})
         nxt = ws.receive_json()
         assert nxt["type"] == "episode" and nxt["seed"] == HELD_OUT_SEEDS[1] + 1
+
+
+async def _stream_until_viewer_leaves(app, query: str, leave_on: str, before_leaving: list[dict]) -> None:
+    """Drive /ws/sim as uvicorn would: when the server sends a ``leave_on`` message, the viewer
+    sends ``before_leaving`` commands and disconnects. Uvicorn (unlike the TestClient) never
+    cancels the handler, so it has to notice the disconnect and return on its own."""
+    inbox: asyncio.Queue = asyncio.Queue()
+    inbox.put_nowait({"type": "websocket.connect"})
+    left = False
+
+    async def send(message):
+        nonlocal left
+        if message["type"] == "websocket.send" and not left and json.loads(message["text"])["type"] == leave_on:
+            for cmd in before_leaving:
+                inbox.put_nowait({"type": "websocket.receive", "text": json.dumps(cmd)})
+            inbox.put_nowait({"type": "websocket.disconnect", "code": 1001})
+            left = True
+
+    scope = {"type": "websocket", "asgi": {"version": "3.0"}, "scheme": "ws", "path": "/ws/sim", "raw_path": b"/ws/sim",
+             "query_string": query.encode(), "root_path": "", "headers": [], "subprotocols": [],
+             "client": ("127.0.0.1", 50000), "server": ("127.0.0.1", 8000)}
+    await asyncio.wait_for(app(scope, inbox.get, send), timeout=20)
+
+
+@pytest.mark.parametrize(("leave_on", "before_leaving"), [("frame", [{"cmd": "pause"}]), ("end", [])],
+                         ids=["while_paused", "on_the_end_screen"])
+def test_stream_handler_ends_when_the_viewer_leaves(ppo_model, leave_on, before_leaving):
+    """A viewer that leaves while paused or on the end screen must not leave its handler waiting
+    forever: that blocked server shutdown (Ctrl+C) indefinitely."""
+    app = create_app(Settings(model_dirs={"ppo": ppo_model}, default_algo="ppo", tick_seconds=0.0,
+                              compare_baselines=False))
+    asyncio.run(_stream_until_viewer_leaves(app, "algo=ppo&speed=50", leave_on, before_leaving))
+    assert app.state.active_streams == 0
 
 
 def test_websocket_reports_a_missing_model(tmp_path):

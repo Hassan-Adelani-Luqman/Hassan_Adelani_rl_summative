@@ -41,6 +41,7 @@ from training.seeds import HELD_OUT_SEEDS
 
 VIEWER_DIR = ROOT / "environment" / "viewer"
 BEST_FILE = ROOT / "models" / "best.json"  # {"algo": "<overall best algorithm>"}, written with the final models
+SHUTDOWN_GRACE_S = 3  # Ctrl+C / SIGTERM never waits longer than this for open viewer streams
 
 
 def model_family_dir(algo: str) -> Path:
@@ -144,6 +145,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "kind": thinking["kind"], "values": thinking["values"], "mask": thinking["mask"],
                 "rationale": rationale(obs, action, location, thinking), "model": loaded.name}
 
+    app.state.active_streams = 0  # live /ws/sim handlers (a test checks they all end on disconnect)
+
     @app.websocket("/ws/sim")
     async def simulate(ws: WebSocket) -> None:
         await ws.accept()
@@ -177,6 +180,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     state["next"] = True
 
         controls = asyncio.create_task(receive_controls())
+
+        async def wait_until(condition) -> None:
+            """Wait for the viewer (pause, end of season), but stop if it has gone away."""
+            while not condition():
+                if controls.done():  # the client disconnected (or the server is shutting down)
+                    raise WebSocketDisconnect()
+                await asyncio.sleep(0.1)
+
+        app.state.active_streams += 1
         try:
             while True:
                 runner = EpisodeRunner(agent, seed, scenario, settings.tick_seconds)
@@ -188,8 +200,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     print(terminal_header(agent.name, seed, scenario), flush=True)
                 state["next"] = False
                 while not runner.done:
-                    while state["paused"] and not state["next"]:
-                        await asyncio.sleep(0.1)
+                    await wait_until(lambda: not state["paused"] or state["next"])
                     frame = runner.step(state["speed"])
                     if settings.verbose:
                         print(terminal_line(frame, settings.colour), flush=True)
@@ -202,13 +213,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 if settings.verbose:
                     print(terminal_summary(summary, summary["reference"]), flush=True)
                 await ws.send_json(summary)
-                while not state["next"]:  # the viewer asks for the next district
-                    await asyncio.sleep(0.1)
+                await wait_until(lambda: state["next"])  # the viewer asks for the next district
                 seed += 1
         except (WebSocketDisconnect, RuntimeError):
             pass
         finally:
             controls.cancel()
+            app.state.active_streams -= 1
 
     app.mount("/", StaticFiles(directory=VIEWER_DIR, html=True), name="viewer")
     return app
@@ -228,7 +239,8 @@ def serve_main(argv: Sequence[str] | None = None) -> int:
     if args.model_dir:
         settings.model_dirs[args.algo] = Path(args.model_dir)
     print(f"Afya Sentinel API on http://{args.host}:{args.port} (docs at /docs)", flush=True)
-    uvicorn.run(create_app(settings), host=args.host, port=args.port, log_level="warning")
+    uvicorn.run(create_app(settings), host=args.host, port=args.port, log_level="warning",
+                timeout_graceful_shutdown=SHUTDOWN_GRACE_S)
     return 0
 
 

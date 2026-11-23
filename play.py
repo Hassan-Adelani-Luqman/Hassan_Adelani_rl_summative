@@ -90,7 +90,7 @@ def run_viewer(args: argparse.Namespace) -> int:
     """Serve the viewer, open the browser, and print the step log as the episode plays."""
     import uvicorn
 
-    from api.app import Settings, create_app
+    from api.app import SHUTDOWN_GRACE_S, Settings, create_app
     from training.seeds import HELD_OUT_SEEDS
 
     policy_dir = Path(args.model_dir) if args.model_dir else None
@@ -106,7 +106,8 @@ def run_viewer(args: argparse.Namespace) -> int:
           "  H = Agent / Reality view   Space = pause   +/- = speed   N = next district   Ctrl+C = quit", flush=True)
     threading.Timer(1.0, webbrowser.open, args=(url,)).start()
     try:
-        uvicorn.run(create_app(settings), host="127.0.0.1", port=args.port, log_level="warning")
+        uvicorn.run(create_app(settings), host="127.0.0.1", port=args.port, log_level="warning",
+                    timeout_graceful_shutdown=SHUTDOWN_GRACE_S)
     except KeyboardInterrupt:
         pass
     return 0
