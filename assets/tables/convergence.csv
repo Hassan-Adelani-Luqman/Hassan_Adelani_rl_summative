@@ -1,0 +1,13 @@
+algo,run,episodes_to_converge,frames_to_converge
+dqn,final_batch_512_seed0,17388.0,324736.0
+dqn,final_batch_512_seed1,16905.0,296800.0
+dqn,final_batch_512_seed2,19081.0,327552.0
+reinforce,final_entropy_0.01_seed0,12821.0,535552.0
+reinforce,final_entropy_0.01_seed1,11565.0,461824.0
+reinforce,final_entropy_0.01_seed2,9799.0,418304.0
+a2c,final_baseline_seed0,8329.0,443264.0
+a2c,final_baseline_seed1,10174.0,558208.0
+a2c,final_baseline_seed2,10480.0,576768.0
+ppo,final_rollout_256_seed0,11746.0,387072.0
+ppo,final_rollout_256_seed1,9993.0,321536.0
+ppo,final_rollout_256_seed2,9962.0,333824.0

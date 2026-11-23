@@ -1,0 +1,6 @@
+| algorithm | config | seeds | held_out_return | infections_averted | vs_greedy_return | better_than_greedy_on | stranded_rate | episodes_to_converge | argmax_return |
+|---|---|---|---|---|---|---|---|---|---|
+| DQN | batch_512 | 3 | -426.7 ± 7.4 | 802.2 | +661.3 [+606.2, +716.9] | 100% | 0 | 17,791 ± 1,143 | — |
+| REINFORCE | entropy_0.01 | 3 | -736.7 ± 21.3 | 581.1 | +351.3 [+304.1, +398.0] | 100% | 0.01 | 11,395 ± 1,518 | -693.6 |
+| A2C | baseline | 3 | -791.6 ± 66.4 | 558.2 | +296.4 [+245.5, +346.2] | 96% | 0 | 9,661 ± 1,164 | -826 |
+| PPO | rollout_256 | 3 | -459.6 ± 19.8 | 776.5 | +628.4 [+575.9, +681.1] | 100% | 0.07 | 10,567 ± 1,021 | -445.5 |
