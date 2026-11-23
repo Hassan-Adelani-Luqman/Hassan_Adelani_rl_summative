@@ -21,11 +21,10 @@ import numpy as np
 import torch
 from tensordict import TensorDict
 from tensordict.nn import TensorDictModule
-from torch.distributions import Categorical
 from torchrl.collectors import Collector
 from torchrl.data import LazyTensorStorage, ReplayBuffer
 from torchrl.data.replay_buffers import SamplerWithoutReplacement
-from torchrl.modules import ProbabilisticActor, ValueOperator
+from torchrl.modules import MaskedCategorical, ProbabilisticActor, ValueOperator
 from torchrl.objectives import A2CLoss, ClipPPOLoss, ReinforceLoss
 from torchrl.objectives.value import GAE
 
@@ -47,9 +46,10 @@ from training.common import (
 
 
 def build_actor(cfg: RunConfig) -> ProbabilisticActor:
+    """Categorical policy over the 12 actions; invalid actions get zero probability."""
     logits = TensorDictModule(mlp(OBS_DIM, N_ACTIONS, cfg), in_keys=["observation"], out_keys=["logits"])
-    return ProbabilisticActor(logits, in_keys=["logits"], distribution_class=Categorical, spec=action_spec(),
-                              return_log_prob=True)
+    return ProbabilisticActor(logits, in_keys={"logits": "logits", "mask": "action_mask"},
+                              distribution_class=MaskedCategorical, spec=action_spec(), return_log_prob=True)
 
 
 def build_critic(cfg: RunConfig) -> ValueOperator:
@@ -154,7 +154,7 @@ def _train_reinforce(cfg: RunConfig, env, actor, critic, logger: RunLogger) -> t
             returns = data["value_target"]
             if cfg.value_baseline:
                 with torch.no_grad():
-                    adv = returns - critic(data.select("observation"))["state_value"]
+                    adv = returns - critic(data.select("observation"))["state_value"]  # baseline V(s)
             else:
                 adv = returns.clone()
             if cfg.normalize_returns:

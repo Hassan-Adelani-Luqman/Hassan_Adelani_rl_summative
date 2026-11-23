@@ -28,12 +28,33 @@ import torch
 import torchrl
 from tensordict import TensorDict
 from torch import nn
+from torchrl.data import Binary
 from torchrl.data import Categorical as CategoricalSpec
-from torchrl.envs import Compose, GymWrapper, InitTracker, RewardScaling, RewardSum, StepCounter, TransformedEnv
+from torchrl.envs import (
+    ActionMask,
+    Compose,
+    GymWrapper,
+    InitTracker,
+    RewardScaling,
+    RewardSum,
+    StepCounter,
+    Transform,
+    TransformedEnv,
+)
 from torchrl.envs.utils import ExplorationType, set_exploration_type
 
 from analysis.baselines import DoNothing, add_infections_averted, evaluate, run_episode, summarize
-from environment.custom_env import ENV_VERSION, N_ACTIONS, AfyaSentinelEnv
+from environment.custom_env import (
+    A_PREVENT,
+    A_SCREEN,
+    ENV_VERSION,
+    N_ACTIONS,
+    N_VILLAGES,
+    OBS_KITS,
+    OBS_LOCATION,
+    OBS_NETS,
+    AfyaSentinelEnv,
+)
 from training.seeds import EVAL_SETS, TRAIN_SEED_POOL, seed_hash
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -137,6 +158,43 @@ def run_dirs(cfg: RunConfig) -> tuple[Path, Path]:
 # ------------------------------------------------------------------------------ environment
 
 
+def action_mask_from_obs(obs: torch.Tensor) -> torch.Tensor:
+    """Valid actions given an observation (``[..., 55]`` -> bool ``[..., 12]``).
+
+    Everything needed is in the observation: the van cannot drive to where it already is,
+    and cannot screen or hand out nets at the hub or with none left. "Return to hub" (which
+    restocks) and "Wait" are always valid. The environment still penalises invalid actions
+    for any policy that ignores this mask (e.g. the random baseline).
+    """
+    location = obs[..., OBS_LOCATION]
+    at_hub = location[..., 0] > 0.5
+    mask = torch.ones(*obs.shape[:-1], N_ACTIONS, dtype=torch.bool, device=obs.device)
+    mask[..., :N_VILLAGES] = location[..., 1:] < 0.5
+    mask[..., A_SCREEN] = ~at_hub & (obs[..., OBS_KITS] > 0)
+    mask[..., A_PREVENT] = ~at_hub & (obs[..., OBS_NETS] > 0)
+    return mask
+
+
+class ActionMaskFromObs(Transform):
+    """Writes ``action_mask`` next to every observation (on reset and on step)."""
+
+    def __init__(self) -> None:
+        super().__init__(in_keys=["observation"], out_keys=["action_mask"])
+
+    def _call(self, next_tensordict):
+        next_tensordict.set("action_mask", action_mask_from_obs(next_tensordict.get("observation")))
+        return next_tensordict
+
+    def _reset(self, tensordict, tensordict_reset):
+        return self._call(tensordict_reset)
+
+    def transform_observation_spec(self, observation_spec):
+        shape = (*observation_spec["observation"].shape[:-1], N_ACTIONS)
+        observation_spec["action_mask"] = Binary(n=N_ACTIONS, shape=shape, dtype=torch.bool,
+                                                 device=observation_spec.device)
+        return observation_spec
+
+
 class SeedPoolReset(gym.Wrapper):
     """Each episode's district is drawn from a fixed seed pool.
 
@@ -173,6 +231,8 @@ def make_env(
         GymWrapper(vector_env, categorical_action_encoding=True),
         Compose(
             InitTracker(),  # marks first steps; TorchRL policies expect it from v0.16
+            ActionMaskFromObs(),  # which actions are valid right now
+            ActionMask(),  # random actions (e.g. DQN warm-up) respect the mask too
             StepCounter(),
             RewardSum(),  # episode_reward: the return in env units (cases), for logging
             RewardScaling(loc=0.0, scale=reward_scale),  # what the agent optimises
@@ -251,11 +311,16 @@ class TorchPolicy:
     def reset(self, seed: int) -> None:
         pass
 
+    @staticmethod
+    def as_tensordict(obs: np.ndarray) -> TensorDict:
+        observation = torch.as_tensor(obs, dtype=torch.float32).unsqueeze(0)
+        return TensorDict({"observation": observation, "action_mask": action_mask_from_obs(observation)},
+                          batch_size=[1])
+
     @torch.no_grad()
     def __call__(self, obs: np.ndarray) -> int:
-        td = TensorDict({"observation": torch.as_tensor(obs, dtype=torch.float32).unsqueeze(0)}, batch_size=[1])
         with set_exploration_type(ExplorationType.DETERMINISTIC):
-            return int(self.actor(td)["action"].item())
+            return int(self.actor(self.as_tensordict(obs))["action"].item())
 
 
 @lru_cache(maxsize=16)
@@ -278,6 +343,7 @@ def evaluate_policy(policy, eval_sets: Iterable[str] = ("held_out",), limit: int
             "seed_hash": seed_hash(seeds),
             "returns": episodes["return"].round(3).tolist(),
             "infections": episodes["infections"].round(2).tolist(),
+            "invalid_actions": int(episodes["invalid"].sum()),
             "action_mix": {c: int(episodes[c].sum()) for c in ("n_travel", "n_screen", "n_prevent", "n_hub", "n_wait")},
         }
     return results

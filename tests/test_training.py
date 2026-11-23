@@ -48,6 +48,34 @@ def test_torchrl_env_passes_spec_checks():
     env.close()
 
 
+def test_action_mask_matches_what_the_environment_calls_invalid():
+    """Masked actions are exactly the ones the env would flag invalid, in real visited states."""
+    import copy
+
+    from analysis.baselines import Greedy, RandomPolicy
+    from training.common import action_mask_from_obs
+
+    checked = 0
+    for policy in (Greedy(), RandomPolicy()):
+        for seed in range(4):
+            env = AfyaSentinelEnv()
+            obs, _ = env.reset(seed=seed)
+            policy.reset(seed)
+            env.kits = 0 if seed == 1 else env.kits  # include the "nothing left" cases
+            env.nets = 0 if seed == 2 else env.nets
+            obs = env._observe()
+            done = False
+            while not done:
+                mask = action_mask_from_obs(torch.as_tensor(obs)).numpy()
+                for action in range(12):
+                    _, _, _, _, info = copy.deepcopy(env).step(action)
+                    assert mask[action] == (not info["invalid"]), (seed, action, info["action_name"])
+                checked += 1
+                obs, _, terminated, truncated, _ = env.step(policy(obs))
+                done = terminated or truncated
+    assert checked > 100
+
+
 def test_training_districts_come_from_the_seed_pool_only():
     first, second = SeedPoolReset(AfyaSentinelEnv()), SeedPoolReset(AfyaSentinelEnv())
     first.reset(seed=7)
@@ -114,6 +142,7 @@ def test_micro_run_trains_saves_and_reloads(algo, tmp_path):
         assert trained(obs) == loaded(obs)
     again = evaluate_policy(loaded, ["held_out"], limit=2)["held_out"]
     assert again["returns"] == saved["eval"]["held_out"]["returns"]
+    assert again["invalid_actions"] == 0  # the action mask keeps trained agents valid
 
 
 def test_resume_skips_runs_that_already_have_eval_json(tmp_path):

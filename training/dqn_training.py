@@ -39,7 +39,9 @@ from training.common import (
 
 
 def build_qvalue_actor(cfg: RunConfig) -> QValueActor:
-    return QValueActor(mlp(OBS_DIM, N_ACTIONS, cfg), in_keys=["observation"], spec=action_spec())
+    """Q-network over the 55 observations; invalid actions are masked out of the argmax."""
+    return QValueActor(mlp(OBS_DIM, N_ACTIONS, cfg), in_keys=["observation"], spec=action_spec(),
+                       action_mask_key="action_mask")
 
 
 def train(cfg: RunConfig) -> dict[str, Any]:
@@ -54,6 +56,7 @@ def train(cfg: RunConfig) -> dict[str, Any]:
         eps_init=cfg.eps_init,
         eps_end=cfg.eps_end,
         annealing_num_steps=max(1, int(cfg.eps_fraction * cfg.total_frames)),
+        action_mask_key="action_mask",  # random exploratory actions are valid ones
     )
     collector = Collector(
         env,
@@ -94,7 +97,7 @@ def train(cfg: RunConfig) -> dict[str, Any]:
             updates += 1
             losses.append(loss.detach())
             with torch.no_grad():
-                q_means.append(actor(sample.select("observation"))["action_value"].max(-1).values.mean())
+                q_means.append(actor(sample.select("observation", "action_mask"))["chosen_action_value"].mean())
         logger.update(
             frames=frames,
             updates=updates,
