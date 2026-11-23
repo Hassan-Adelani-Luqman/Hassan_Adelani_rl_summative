@@ -108,18 +108,36 @@ def kernel_ref(user: str, shard: str) -> str:
     return f"{user}/{KERNEL_PREFIX}-{shard}"
 
 
+def render_kernel(shard: str, frames: int | None, workers: int) -> str:
+    """kernel.py with this shard's CONFIG filled in (Kaggle uploads only the code file)."""
+    source = (HERE / "kernel.py").read_text()
+    config = repr({"shard": shard, "frames": frames, "workers": workers})
+    rendered, count = re.subn(r"^CONFIG = .*$", f"CONFIG = {config}  # set by launch.py", source, flags=re.M)
+    if count != 1:
+        raise SystemExit("could not find the CONFIG line in kernel.py")
+    return rendered
+
+
+def parse_status(text: str) -> str:
+    """'user/kernel has status "KernelWorkerStatus.COMPLETE"' -> 'complete'."""
+    match = re.search(r'status "?(?:KernelWorkerStatus\.)?(\w+)"?', text, flags=re.I)
+    return match.group(1).lower() if match else text.strip()
+
+
+def output_roots(shard: str) -> tuple[Path, Path]:
+    """Where a shard's pulled logs/models go; the test shard stays out of the real results."""
+    if shard == "test":
+        return ROOT / "logs" / "smoke" / "kaggle", ROOT / "models" / "smoke" / "kaggle"
+    return ROOT / "logs", ROOT / "models"
+
+
 def push(shard: str, frames: int | None, workers: int) -> None:
     """Render kernel.py with this shard's CONFIG and push it as a private CPU kernel."""
     user = username()
     folder = BUILD / "kernels" / shard
     shutil.rmtree(folder, ignore_errors=True)
     folder.mkdir(parents=True)
-    source = (HERE / "kernel.py").read_text()
-    config = json.dumps({"shard": shard, "frames": frames, "workers": workers}).replace("null", "None")
-    rendered, count = re.subn(r"^CONFIG = .*$", f"CONFIG = {config}  # set by launch.py", source, flags=re.M)
-    if count != 1:
-        raise SystemExit("could not find the CONFIG line in kernel.py")
-    (folder / "kernel.py").write_text(rendered)
+    (folder / "kernel.py").write_text(render_kernel(shard, frames, workers))
     meta = {
         "id": kernel_ref(user, shard),
         "title": f"{KERNEL_PREFIX}-{shard}",
@@ -144,9 +162,7 @@ def status(shards: Sequence[str]) -> dict[str, str]:
     states = {}
     for shard in shards:
         out = kaggle("kernels", "status", kernel_ref(user, shard), capture=True, check=False)
-        text = (out.stdout or out.stderr).strip()
-        match = re.search(r'status "?(\w+)"?', text, flags=re.I)
-        states[shard] = match.group(1).lower() if match else text
+        states[shard] = parse_status(out.stdout or out.stderr)
         print(f"{shard:<10} {states[shard]}")
     return states
 
@@ -162,10 +178,10 @@ def pull(shard: str) -> None:
     if out is None:
         raise SystemExit(f"no logs/ in the output of {shard}; see {dest}")
     merged = 0
-    for sub in ("logs", "models"):
+    for sub, root in zip(("logs", "models"), output_roots(shard), strict=True):
         for path in (out / sub).rglob("*"):
             if path.is_file():
-                target = ROOT / sub / path.relative_to(out / sub)
+                target = root / path.relative_to(out / sub)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(path, target)
                 merged += 1
