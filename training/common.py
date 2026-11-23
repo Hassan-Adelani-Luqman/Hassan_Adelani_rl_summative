@@ -72,7 +72,7 @@ class RunConfig:
     algo: str
     run_id: str = "baseline"
     seed: int = 0
-    total_frames: int = 300_000
+    total_frames: int = 1_000_000  # same budget for every run (PPO converges near here; see report)
     num_envs: int = 8
     scenario: str = "default"
     reward_scale: float = 0.02
