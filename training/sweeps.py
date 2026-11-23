@@ -45,10 +45,11 @@ SWEEPS: dict[str, list[tuple[str, dict[str, Any]]]] = {
     ],
     "a2c": [
         ("baseline", {}),
-        ("lr_2e-4", {"lr": 2e-4}),
-        ("lr_2e-3", {"lr": 2e-3}),
+        ("lr_1e-4", {"lr": 1e-4}),
+        ("lr_7e-4", {"lr": 7e-4}),
         ("gamma_0.95", {"gamma": 0.95}),
         ("gamma_0.999", {"gamma": 0.999}),
+        ("no_adv_norm", {"normalize_advantage": False}),
         ("rollout_5", {"rollout_len": 5}),
         ("rollout_64", {"rollout_len": 64}),
         ("lambda_0.8", {"gae_lambda": 0.8}),
