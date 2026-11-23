@@ -1,0 +1,91 @@
+{
+  "runs": {
+    "reinforce/final_entropy_0.01_seed0": {
+      "run": "reinforce/final_entropy_0.01_seed0",
+      "status": "done",
+      "seconds": 1116.7,
+      "fps": 914.2,
+      "return_mean": -713.9916620096305
+    },
+    "reinforce/final_entropy_0.01_seed1": {
+      "run": "reinforce/final_entropy_0.01_seed1",
+      "status": "done",
+      "seconds": 1120.4,
+      "fps": 907.3,
+      "return_mean": -756.2340612872003
+    },
+    "dqn/final_batch_512_seed1": {
+      "run": "dqn/final_batch_512_seed1",
+      "status": "done",
+      "seconds": 2779.0,
+      "fps": 361.8,
+      "return_mean": -429.7441121466659
+    },
+    "dqn/final_batch_512_seed2": {
+      "run": "dqn/final_batch_512_seed2",
+      "status": "done",
+      "seconds": 2794.0,
+      "fps": 359.9,
+      "return_mean": -418.3164735361466
+    },
+    "dqn/final_batch_512_seed0": {
+      "run": "dqn/final_batch_512_seed0",
+      "status": "done",
+      "seconds": 2806.3,
+      "fps": 358.3,
+      "return_mean": -432.1051022902217
+    },
+    "reinforce/final_entropy_0.01_seed2": {
+      "run": "reinforce/final_entropy_0.01_seed2",
+      "status": "done",
+      "seconds": 1095.1,
+      "fps": 928.7,
+      "return_mean": -739.8507503801428
+    },
+    "a2c/final_baseline_seed0": {
+      "run": "a2c/final_baseline_seed0",
+      "status": "done",
+      "seconds": 1048.2,
+      "fps": 973.6,
+      "return_mean": -752.7625309044117
+    },
+    "a2c/final_baseline_seed1": {
+      "run": "a2c/final_baseline_seed1",
+      "status": "done",
+      "seconds": 1044.0,
+      "fps": 977.6,
+      "return_mean": -753.8641719163769
+    },
+    "a2c/final_baseline_seed2": {
+      "run": "a2c/final_baseline_seed2",
+      "status": "done",
+      "seconds": 1060.7,
+      "fps": 962.4,
+      "return_mean": -868.3209059620477
+    },
+    "ppo/final_rollout_256_seed0": {
+      "run": "ppo/final_rollout_256_seed0",
+      "status": "done",
+      "seconds": 1116.4,
+      "fps": 911.7,
+      "return_mean": -441.64171372683495
+    },
+    "ppo/final_rollout_256_seed1": {
+      "run": "ppo/final_rollout_256_seed1",
+      "status": "done",
+      "seconds": 916.7,
+      "fps": 1107.0,
+      "return_mean": -456.3136469709199
+    },
+    "ppo/final_rollout_256_seed2": {
+      "run": "ppo/final_rollout_256_seed2",
+      "status": "done",
+      "seconds": 920.9,
+      "fps": 1101.0,
+      "return_mean": -480.77408352559206
+    }
+  },
+  "shard": "final",
+  "total": 12,
+  "last_started": "2026-11-23 16:56:09"
+}
