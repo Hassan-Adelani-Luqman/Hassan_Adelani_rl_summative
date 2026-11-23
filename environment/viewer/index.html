@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Afya Sentinel · Bugesera</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23fff'/%3E%3Cpath d='M6 2h4v4h4v4h-4v4H6v-4H2V6h4z' fill='%23e53935'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }
+  </script>
+</head>
+<body>
+  <div id="scene"></div>
+
+  <header id="topbar">
+    <div class="brand"><span class="cross" aria-hidden="true">✚</span>Afya Sentinel<span class="sub">Bugesera District, Rwanda</span></div>
+    <div class="clock"><span id="daynight" aria-hidden="true">☀</span><span id="day">Day 0.0</span><span class="of">/ 30</span></div>
+    <div class="badges">
+      <span id="view-badge" class="badge agent" title="Press H to switch">AGENT VIEW</span>
+      <span id="model-badge" class="badge">loading…</span>
+      <span id="status-badge" class="badge">connecting…</span>
+    </div>
+  </header>
+
+  <aside id="left" class="panel">
+    <section>
+      <h2>Van stock</h2>
+      <div class="gauge"><label>Fuel</label><div class="bar fuel"><i id="g-fuel"></i></div><span id="v-fuel">–</span></div>
+      <div class="gauge"><label>Test kits</label><div class="bar kits"><i id="g-kits"></i></div><span id="v-kits">–</span></div>
+      <div class="gauge"><label>Bed nets</label><div class="bar nets"><i id="g-nets"></i></div><span id="v-nets">–</span></div>
+    </section>
+    <section>
+      <h2>Weather</h2>
+      <div class="gauge"><label>Rain today</label><div class="bar rain"><i id="g-rain"></i></div><span id="v-rain">–</span></div>
+      <div class="gauge"><label>3-day forecast</label><div class="bar rain"><i id="g-forecast"></i></div><span id="v-forecast">–</span></div>
+      <div class="gauge"><label>Transmission<small>rain 4–6 days ago</small></label><div class="bar trans"><i id="g-trans"></i></div><span id="v-trans">–</span></div>
+    </section>
+    <section>
+      <h2>Epidemic: truth vs reports</h2>
+      <canvas id="c-epi" width="300" height="104"></canvas>
+      <div class="legend-row"><span class="sw truth"></span>true prevalence<span class="sw rep"></span>CHW fever reports</div>
+    </section>
+    <section>
+      <h2>Return <span id="v-return" class="big">0</span></h2>
+      <canvas id="c-reward" width="300" height="60"></canvas>
+    </section>
+    <section class="totals">
+      <div><b id="t-inf">0</b><span>infections</span></div>
+      <div><b id="t-screens">0</b><span>screenings</span></div>
+      <div><b id="t-nets">0</b><span>nets placed</span></div>
+      <div><b id="t-km">0</b><span>km driven</span></div>
+    </section>
+  </aside>
+
+  <aside id="right" class="panel">
+    <section>
+      <h2>Agent thinking <span id="thinking-kind" class="kind"></span></h2>
+      <div id="bars"></div>
+      <p id="rationale">Waiting for the first decision…</p>
+    </section>
+    <section>
+      <h2>Decisions</h2>
+      <ol id="log"></ol>
+    </section>
+  </aside>
+
+  <footer id="help">
+    <kbd>H</kbd> Agent / Reality view · <kbd>Space</kbd> pause · <kbd>+</kbd><kbd>−</kbd> speed <span id="speed">1×</span> ·
+    <kbd>N</kbd> next district · <kbd>F</kbd> follow van · drag to orbit
+  </footer>
+
+  <div id="summary" class="panel" hidden>
+    <h2>Season over: <span id="s-title"></span></h2>
+    <div id="s-body"></div>
+    <button id="s-next" type="button">Next district (N)</button>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
