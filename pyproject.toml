@@ -5,9 +5,12 @@ description = "Afya Sentinel: reinforcement-learning dispatch of a mobile malari
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
-    "torch>=2.7",
-    "torchrl>=0.9",
-    "tensordict>=0.9",
+    # Exact pins: TorchRL 0.15's compiled extensions (Python >= 3.11) are built against
+    # PyTorch 2.15, and it requires tensordict >=0.15.2,<0.16. Kaggle kernels install
+    # from the same uv.lock, so local and cloud runs use identical versions.
+    "torch==2.15.0",
+    "torchrl==0.15.0",
+    "tensordict==0.15.6",
     "gymnasium>=1.0",
     "numpy>=1.26",
     "fastapi>=0.115",
