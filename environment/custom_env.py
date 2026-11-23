@@ -233,7 +233,7 @@ class EnvParams:
     forecast_noise: float = 0.07
     rain_lag_ticks: tuple[int, int] = (8, 12)  # transmission follows rain 4–6 days earlier
     # disease (per tick)
-    beta: float = 0.08  # calibrated (P2): do-nothing infects ~40% by day 30; heavy rain escapes ~50%
+    beta: float = 0.08  # calibrated: do-nothing infects ~40% by day 30; heavy rain escapes ~50%
     rain_mult_floor: float = 0.3
     rain_mult_gain: float = 1.7
     hotspot_mult: float = 1.6

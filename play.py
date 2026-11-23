@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     build_parser().parse_args(argv)
-    raise SystemExit("play.py: the simulation and viewer are not built yet (Phase 7).")
+    raise SystemExit("play.py: the simulation viewer is not built yet.")
 
 
 if __name__ == "__main__":

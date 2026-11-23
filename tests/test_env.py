@@ -1,4 +1,4 @@
-"""Phase 2 environment tests: API compliance, observation bounds, reward invariants,
+"""Environment tests: API compliance, observation bounds, reward invariants,
 termination, semi-MDP timing, determinism, the delayed effects (nets, rain lag), and
 the baseline ordering."""
 

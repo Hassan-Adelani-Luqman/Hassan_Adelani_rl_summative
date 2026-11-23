@@ -1,4 +1,4 @@
-"""Phase 1 smoke tests: pinned stack, CPU-only torch, TorchRL <-> gymnasium bridge, CLI entry points."""
+"""Smoke tests: pinned stack, CPU-only torch, TorchRL <-> gymnasium bridge, CLI entry points."""
 
 from __future__ import annotations
 
@@ -89,6 +89,6 @@ def test_main_lists_every_subcommand():
     ],
 )
 def test_main_routes_to_play(argv):
-    # Until Phase 7, play exits with its own "not built yet" message; reaching it proves the routing.
+    # Until the viewer exists, play exits with its own "not built yet" message; reaching it proves the routing.
     result = _run(*argv)
     assert "play.py:" in result.stderr
