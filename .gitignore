@@ -15,6 +15,10 @@ cloud/kaggle/pulled/
 # Large intermediate training artefacts (best models + summary logs are committed)
 models/**/checkpoints/
 
+# Local smoke runs
+logs/smoke/
+models/smoke/
+
 # OS / editor
 .DS_Store
 .vscode/

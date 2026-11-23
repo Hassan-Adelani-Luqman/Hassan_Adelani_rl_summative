@@ -40,3 +40,7 @@ explicit = true
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+filterwarnings = [
+    # raised by TorchRL's own built-in weight updaters at import time, not by this project
+    "ignore:Creating .*WeightUpdater which inherits from WeightUpdaterBase is deprecated:DeprecationWarning",
+]
